@@ -1,9 +1,20 @@
 const { Client, GatewayIntentBits } = require('discord.js');
 require('dotenv').config()
 const { trendingSearchList } = require('./authApi');
+const express = require('express')
+const TelegramBot = require('node-telegram-bot-api');
+const app = express()
+
+const PORT = 3000
+const Token = process.env.TELEGRAM_BOT_TOKEN
+
+const bot = new TelegramBot(Token, { polling: false });
+
+app.use(express.json())
+
+// DISCORD BOT
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
-
 client.on('messageCreate', async (message) => {
     if(message.author.bot) return
     message.reply({
@@ -45,3 +56,26 @@ async function trendingSearches() {
     
     return trendingCoins 
 }
+
+// TELEGRAM BOT
+// Set webhook route
+app.post('/bot-endpoint', (req, res) => {
+    bot.processUpdate(req.body);
+    res.sendStatus(200);
+  });
+  
+  // Handle messages
+  bot.on('message', (msg) => {
+    const chatId = msg.chat.id;
+    bot.sendMessage(chatId, 'Hi!');
+  });
+  
+  // Set webhook on startup
+  bot.setWebHook(`${process.env.MY_NGROK_URL}/bot-endpoint`)
+    .then(() => console.log('Webhook set successfully'))
+    .catch(console.error);
+  
+  // Start server
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
